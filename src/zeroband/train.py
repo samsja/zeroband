@@ -1,28 +1,18 @@
 import os
-import sys
 
 import torch
 import torch.distributed as dist
 from dion import Muon
-from loguru import logger
 from pydantic_config import BaseConfig, parse_argv
 from rich import print as rprint
 from torch.distributed._composable.replicate import replicate
 from torch.nn import functional as F
 
 import wandb
+
+# from zeroband.utils import get_peak_flops
+from zeroband.logger import logger
 from zeroband.model import Transformer, llama_configs
-
-# Remove default handler
-logger.remove()
-
-# Add with simpler format
-logger.remove()
-logger.add(
-    sys.stderr,
-    format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
-    colorize=True,
-)
 
 
 class DataConfig(BaseConfig):
@@ -85,6 +75,8 @@ def train(config: Config):
 
     torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
+
+    # gpu_peak_flops = get_peak_flops(torch.cuda.get_device_name(world.local_rank))
 
     ##################
     ### model init ###

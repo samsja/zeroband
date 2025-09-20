@@ -89,11 +89,11 @@ def train(config: Config):
     model = Transformer(model_config).cuda()
     logger.info("Model initialized")
 
-    # model = torch.compile(model, fullgraph=True)
+    model = torch.compile(model, fullgraph=True)
     logger.info("Model compiled")
 
     model = replicate(model, bucket_cap_mb=100)
-    # logger.info("Applied DDP to model")
+    logger.info("Applied DDP to model")
 
     ######################
     ### optimizer init ###

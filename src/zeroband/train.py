@@ -152,16 +152,16 @@ def train(config: Config):
                 loss = F.cross_entropy(outputs.view(-1, model_config.vocab_size), targets.view(-1)) / num_grad_acc
 
             del outputs
-
             loss.backward()
-
             batch_loss += loss
+
+        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         optimizer.step()
         optimizer.zero_grad()
 
         dist.all_reduce(batch_loss, op=dist.ReduceOp.AVG)
-        logger.success(f"step {step} | loss {batch_loss.item():.4f}")
+        logger.success(f"step {step} | loss {batch_loss.item():.4f} | grad_norm {grad_norm.item():.4f}")
 
     logger.success("Training finished")
 

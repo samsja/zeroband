@@ -7,6 +7,8 @@ from loguru import logger
 from pydantic_config import BaseConfig, parse_argv
 from rich import print as rprint
 
+from zeroband.model import Transformer, llama_configs
+
 # Remove default handler
 logger.remove()
 
@@ -64,6 +66,24 @@ def train(config: Config):
 
     torch.cuda.set_device(world.local_rank)
     dist.init_process_group(backend="cuda:nccl", device_id=torch.device("cuda", world.local_rank))
+
+    ##################
+    ### model init ###
+    ##################
+
+    model_config = llama_configs[config.model]
+    model = Transformer(model_config).cuda()
+    logger.info("Model initialized")
+
+    model = torch.compile(model, fullgraph=True)
+    logger.info("Model compiled")
+
+    ######################
+    ### optimizer init ###
+    #####################
+
+    for step in range(config.total_steps):
+        ...
 
     logger.success("Training finished")
 

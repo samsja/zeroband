@@ -1,14 +1,35 @@
 [project]
 name = "zeroband"
 version = "0.1.0"
-description = "Add your description here"
+description = "low communication training codebase"
 readme = "README.md"
 authors = [
-    { name = "Sami Jaghouar", email = "sami.jaghouar@hotmail.fr" }
+    { name = "Sami Jaghouar", email = "sami.jaghouar@gmail.fr" }
 ]
 requires-python = ">=3.10.13"
-dependencies = []
+dependencies = ["torch>=2.8.0","wandb","numpy","loguru","pydantic_config @ https://github.com/samsja/pydantic_config.git"]
+
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+    "pytest>=8.4.1",
+    "ruff>=0.12.1",
+]
+
+
+[tool.ruff.lint]
+select = ["F", "I"]
+ignore = ["F722", "F821"] # Need to ignore for jaxtyping (https://docs.kidger.site/jaxtyping/faq/)
+
+[tool.ruff]
+line-length = 120
+
+
+[tool.hatch.metadata]
+allow-direct-references = true
+

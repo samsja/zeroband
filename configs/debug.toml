@@ -1,4 +1,5 @@
 model = "debugmodel"
+total_steps = 5
 
 [data]
 fake = true

@@ -7,7 +7,15 @@ authors = [
     { name = "Sami Jaghouar", email = "sami.jaghouar@gmail.fr" }
 ]
 requires-python = ">=3.10.13"
-dependencies = ["torch>=2.8.0","wandb","numpy","loguru","pydantic_config @ https://github.com/samsja/pydantic_config.git"]
+dependencies = [
+    "torch>=2.8.0",
+    "wandb",
+    "numpy",
+    "loguru",
+    "pydantic_config @ https://github.com/samsja/pydantic_config.git",
+    "rich",
+    "dion @ git+https://github.com/samsja/dion.git",
+]
 
 
 [build-system]

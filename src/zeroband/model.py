@@ -216,6 +216,7 @@ class Attention(nn.Module):
         xk = keys.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
         xv = values.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
 
+        # todo remove efficient attention
         with sdpa_kernel([SDPBackend.FLASH_ATTENTION], set_priority=True):
             output = F.scaled_dot_product_attention(xq, xk, xv, is_causal=True)
 

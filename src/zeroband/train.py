@@ -10,6 +10,7 @@ from rich import print as rprint
 from torch.distributed._composable.replicate import replicate
 from torch.nn import functional as F
 
+import wandb
 from zeroband.model import Transformer, llama_configs
 
 # Remove default handler
@@ -49,11 +50,18 @@ class LRSChedulerConfig(BaseConfig):
     decay_steps: int = 100
 
 
+class WandbConfig(BaseConfig):
+    project: str = "zeroband"
+    name: str | None = None
+    group: str | None = None
+
+
 class Config(BaseConfig):
     data: DataConfig
     model: str
     total_steps: int
     optim: OptimizerConfig = OptimizerConfig()
+    wandb: WandbConfig | None = None
 
 
 class World:
@@ -64,9 +72,9 @@ class World:
 
 
 def train(config: Config):
-    #####################
-    ### pytorch dist init ###
-    #####################
+    #########################
+    ### pytorch init ###
+    #########################
 
     world = World()
 
@@ -75,10 +83,7 @@ def train(config: Config):
     torch.cuda.set_device(world.local_rank)
     dist.init_process_group(backend="cuda:nccl", device_id=torch.device("cuda", world.local_rank))
 
-    ################################
-    ### pytorch performance init ###
-    ################################
-
+    torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
 
     ##################
@@ -94,6 +99,17 @@ def train(config: Config):
 
     model = replicate(model, bucket_cap_mb=100)
     logger.info("Applied DDP to model")
+
+    #########################
+    ### other init ###
+    #########################
+
+    if world.rank == 0 and config.wandb:
+        wandb.init(
+            project=config.wandb.project, name=config.wandb.name, group=config.wandb.group, config=config.model_dump()
+        )
+
+    max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB
 
     ######################
     ### optimizer init ###
@@ -138,7 +154,12 @@ def train(config: Config):
     #####################
 
     for step in range(config.total_steps):
+        torch.cuda.reset_peak_memory_stats()
+
         batch_loss = torch.tensor(0.0).cuda()
+        ###################
+        ### gradd accum ##
+        ###################
         for _ in range(num_grad_acc):
             inputs_ids = torch.randint(
                 0, model_config.vocab_size, (config.data.micro_batch_size, config.data.seq_len)
@@ -155,13 +176,37 @@ def train(config: Config):
             loss.backward()
             batch_loss += loss
 
+        ######################
+        ### optimizer step ###
+        ######################
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         optimizer.step()
         optimizer.zero_grad()
 
+        ####################
+        ### log metrics ###
+        ####################
+
         dist.all_reduce(batch_loss, op=dist.ReduceOp.AVG)
-        logger.success(f"step {step} | loss {batch_loss.item():.4f} | grad_norm {grad_norm.item():.4f}")
+
+        peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
+        peak_memory_pct = peak_memory / max_memory * 100
+
+        logger.success(
+            f"step {step} | loss {batch_loss.item():.4f} | grad_norm {grad_norm.item():.4f} | peak_memory {peak_memory:.4f} GiB  {peak_memory_pct:.1f}%"
+        )
+
+        if world.rank == 0 and config.wandb:
+            wandb.log(
+                {
+                    "loss/mean": batch_loss.item(),
+                    "optim/grad_norm": grad_norm.item(),
+                    "optim/lr": optimizer.param_groups[0]["lr"],
+                    "perf/peak_memory": peak_memory,
+                    "step": step,
+                }
+            )
 
     logger.success("Training finished")
 

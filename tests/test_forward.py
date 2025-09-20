@@ -1,5 +1,7 @@
-from zeroband.model import Transformer, llama_configs
 import torch
+
+from zeroband.model import Transformer, llama_configs
+
 
 def test_forward():
     model_args = llama_configs["debugmodel"]

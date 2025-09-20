@@ -1,16 +1,12 @@
 # inspired by https://github.com/pytorch/torchtitan/tree/main/torchtitan/models/llama3/model
 
 
+from dataclasses import dataclass
+
 import torch
 import torch.nn.functional as F
 from torch import nn
-
-from dataclasses import dataclass
-
-from torch import nn
-
-from torch.nn.attention import sdpa_kernel, SDPBackend
-
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 
 @dataclass
@@ -37,9 +33,7 @@ class TransformerModelArgs:
     def get_nparams_and_flops(self, model: nn.Module, seq_len: int) -> tuple[int, int]:
         nparams = sum(p.numel() for p in model.parameters())
         nparams_embedding = sum(
-            sum(p.numel() for p in m.parameters())
-            for m in model.children()
-            if isinstance(m, nn.Embedding)
+            sum(p.numel() for p in m.parameters()) for m in model.children() if isinstance(m, nn.Embedding)
         )
 
         l, h, q, t = (
@@ -171,22 +165,14 @@ class Attention(nn.Module):
     def __init__(self, model_args: TransformerModelArgs):
         super().__init__()
         self.n_heads = model_args.n_heads
-        self.n_kv_heads = (
-            model_args.n_heads
-            if model_args.n_kv_heads is None
-            else model_args.n_kv_heads
-        )
+        self.n_kv_heads = model_args.n_heads if model_args.n_kv_heads is None else model_args.n_kv_heads
         self.n_rep = self.n_heads // self.n_kv_heads
         self.head_dim = model_args.dim // model_args.n_heads
 
-        self.wq = nn.Linear(
-            model_args.dim, model_args.n_heads * self.head_dim, bias=False
-        )
+        self.wq = nn.Linear(model_args.dim, model_args.n_heads * self.head_dim, bias=False)
         self.wk = nn.Linear(model_args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.wv = nn.Linear(model_args.dim, self.n_kv_heads * self.head_dim, bias=False)
-        self.wo = nn.Linear(
-            model_args.n_heads * self.head_dim, model_args.dim, bias=False
-        )
+        self.wo = nn.Linear(model_args.n_heads * self.head_dim, model_args.dim, bias=False)
 
     def init_weights(self, init_std: float):
         for linear in (self.wq, self.wk, self.wv):
@@ -233,10 +219,8 @@ class Attention(nn.Module):
         with sdpa_kernel([SDPBackend.FLASH_ATTENTION], set_priority=True):
             output = F.scaled_dot_product_attention(xq, xk, xv, is_causal=True)
 
-        output = output.transpose(
-            1, 2
-        ).contiguous()  # (bs, seqlen, n_local_heads, head_dim)
-        
+        output = output.transpose(1, 2).contiguous()  # (bs, seqlen, n_local_heads, head_dim)
+
         output = output.view(bs, seqlen, -1)
         return self.wo(output)
 
@@ -378,9 +362,7 @@ class Transformer(nn.Module):
 
         self.tok_embeddings = nn.Embedding(model_args.vocab_size, model_args.dim)
 
-        self.register_buffer(
-            "freqs_cis", self._precompute_freqs_cis(), persistent=False
-        )
+        self.register_buffer("freqs_cis", self._precompute_freqs_cis(), persistent=False)
 
         self.layers = torch.nn.ModuleDict()
         for layer_id in range(model_args.n_layers):
@@ -465,12 +447,10 @@ class Transformer(nn.Module):
         h = self.norm(h) if self.norm else h
         output = self.output(h) if self.output else h
         return output
-    
-    
+
+
 llama_configs = {
-    "debugmodel": TransformerModelArgs(
-        dim=256, n_layers=6, n_heads=16, vocab_size=2000, rope_theta=500000
-    ),
+    "debugmodel": TransformerModelArgs(dim=256, n_layers=6, n_heads=16, vocab_size=2000, rope_theta=500000),
     "8B": TransformerModelArgs(
         dim=4096,
         n_layers=32,

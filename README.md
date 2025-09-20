@@ -1,5 +1,14 @@
 # zeroband
 
+```bash
+uv run torchrun --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
+```
+
+to train the mode
+
+
+##
+
 codebase to create low bandwith scaling law.
 
 

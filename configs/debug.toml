@@ -1,0 +1,8 @@
+model = "debugmodel"
+
+[data]
+fake = true
+micro_batch_size = 8
+batch_size = 16
+seq_len = 256
+

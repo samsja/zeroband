@@ -37,9 +37,14 @@ class WandbConfig(BaseConfig):
     group: str | None = None
 
 
+class ModelConfig(BaseConfig):
+    name: str
+    compile: bool = True
+
+
 class Config(BaseConfig):
     data: DataConfig
-    model: str
+    model: ModelConfig
     total_steps: int
     optim: OptimizerConfig = OptimizerConfig()
     wandb: WandbConfig | None = None

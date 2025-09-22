@@ -36,12 +36,13 @@ def train(config: Config):
     ### model init ###
     ##################
 
-    model_config = llama_configs[config.model]
+    model_config = llama_configs[config.model.name]
     model = Transformer(model_config).cuda()
     logger.info("Model initialized")
 
-    model = torch.compile(model, fullgraph=True)
-    logger.info("Model compiled")
+    if config.model.compile:
+        model = torch.compile(model, fullgraph=True)
+        logger.info("Model compiled")
 
     model = replicate(model, bucket_cap_mb=100)
     logger.info("Applied DDP to model")

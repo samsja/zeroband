@@ -451,7 +451,7 @@ class Transformer(nn.Module):
 
 
 llama_configs = {
-    "debugmodel": TransformerModelArgs(dim=256, n_layers=6, n_heads=16, vocab_size=2000, rope_theta=500000),
+    "debugmodel": TransformerModelArgs(dim=128, n_layers=2, n_heads=4, vocab_size=2000, rope_theta=500000),
     "14M": TransformerModelArgs(
         dim=128,
         n_layers=6,

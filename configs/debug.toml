@@ -1,5 +1,8 @@
-model = "debugmodel"
 total_steps = 5
+
+[model]
+name = "debugmodel"
+compile = false
 
 [data]
 fake = true

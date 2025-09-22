@@ -1,5 +1,8 @@
-model = "14M"
 total_steps = 1000000
+
+[model]
+name = "14M"
+compile = true
 
 [data]
 name = "allenai/c4"

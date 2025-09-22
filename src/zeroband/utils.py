@@ -1,8 +1,10 @@
 import os
+import time
 
 import torch
 
 from zeroband.logger import logger
+from zeroband.model import Transformer
 
 
 class World:
@@ -56,6 +58,41 @@ def get_peak_flops(device_name: str) -> int:
     else:  # for other GPU types, assume A100
         logger.warning(f"Peak flops undefined for: {device_name}, fallback to A100")
         return 312e12
+
+
+class PerfCounter:
+    def __init__(self, model: Transformer, seq_len: int):
+        self.model_config = model.model_args
+        self.world = World()
+        self.peak_flops = get_peak_flops(torch.cuda.get_device_name(self.world.local_rank))
+        self.nparams, self.num_flops_per_token = self.model_config.get_nparams_and_flops(model, seq_len=seq_len)
+
+        self._start_time = None
+
+    def start(self):
+        self._start_time = time.time()
+
+    def get_perf(self, num_tokens_per_device: int):
+        # tokens per second per device, abbreviated as tps
+
+        step_time = time.time() - self._start_time
+        tps = num_tokens_per_device / step_time
+
+        # model FLOPS utilization
+        # For its definition and calculation, please refer to the PaLM paper:
+        # https://arxiv.org/abs/2204.02311
+        mfu = 100 * self.num_flops_per_token * tps / self.peak_flops
+        tflops = self.num_flops_per_token * tps / 1e12
+
+        tps_global = tps * self.world.world_size
+
+        return {
+            "tps": tps,
+            "mfu": mfu,
+            "tflops": tflops,
+            "tps_global": tps_global,
+            "step_time": step_time,
+        }
 
 
 class FakeTokenizer:

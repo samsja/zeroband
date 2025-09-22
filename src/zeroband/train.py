@@ -12,7 +12,7 @@ from zeroband.config import Config
 from zeroband.data import setup_dataloader
 from zeroband.logger import logger
 from zeroband.model import Transformer, llama_configs
-from zeroband.utils import FakeTokenizer, World
+from zeroband.utils import FakeTokenizer, PerfCounter, World
 
 
 def train(config: Config):
@@ -44,7 +44,7 @@ def train(config: Config):
         model = torch.compile(model, fullgraph=True)
         logger.info("Model compiled")
 
-    model = replicate(model, bucket_cap_mb=100)
+    model = replicate(model, bucket_cap_mb=100)  # TODO make sure we don't all reduce at each grad acc step
     logger.info("Applied DDP to model")
 
     #########################
@@ -113,11 +113,16 @@ def train(config: Config):
     ### training loop ###
     #####################
 
+    perf_counter = PerfCounter(model, config.data.seq_len)
+
+    total_tokens = 0
+
     for step in range(config.total_steps):
         torch.cuda.reset_peak_memory_stats()
 
         batch_loss = torch.tensor(0.0).cuda()
         max_loss = torch.tensor(0.0).cuda()
+        perf_counter.start()
         ###################
         ### gradd accum ##
         ###################
@@ -155,8 +160,13 @@ def train(config: Config):
 
         pplx = torch.exp(batch_loss).item()
 
+        total_tokens += config.data.seq_len * config.data.batch_size
+        perf_data = perf_counter.get_perf(
+            num_tokens_per_device=config.data.seq_len * config.data.batch_size // world.world_size
+        )
+
         logger.info(
-            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [cyan]max_loss {max_loss.item():.4f}[/cyan] | [yellow]pplx {pplx:.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] |"
+            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] | [cyan]tps {perf_data['tps']:.4f}[/cyan] | [yellow]mfu {perf_data['mfu']:.4f}%[/yellow]"
         )
 
         if world.rank == 0 and config.wandb:
@@ -165,9 +175,15 @@ def train(config: Config):
                     "train/loss": batch_loss.item(),
                     "train/max_loss": max_loss.item(),
                     "train/perplexity": pplx,
+                    "train/total_tokens": total_tokens,
                     "optim/grad_norm": grad_norm.item(),
                     "optim/lr": optimizer.param_groups[0]["lr"],
                     "perf/peak_memory": peak_memory,
+                    "perf/tps": perf_data["tps"],
+                    "perf/tps_global": perf_data["tps_global"],
+                    "perf/mfu": perf_data["mfu"],
+                    "perf/tflops": perf_data["tflops"],
+                    "perf/step_time": perf_data["step_time"],
                     "step": step,
                 }
             )

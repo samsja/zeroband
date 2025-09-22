@@ -1,10 +1,8 @@
 # zeroband
 
 ```bash
-uv run torchrun --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
+uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
 ```
-
-to train the mode
 
 
 ##

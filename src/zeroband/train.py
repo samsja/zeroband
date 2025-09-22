@@ -149,6 +149,7 @@ def train(config: Config):
         torch.cuda.reset_peak_memory_stats()
 
         batch_loss = torch.tensor(0.0).cuda()
+        max_loss = torch.tensor(0.0).cuda()
         ###################
         ### gradd accum ##
         ###################
@@ -167,6 +168,7 @@ def train(config: Config):
             del outputs
             loss.backward()
             batch_loss += loss
+            max_loss = torch.max(max_loss, loss)
 
         ######################
         ### optimizer step ###
@@ -181,18 +183,23 @@ def train(config: Config):
         ####################
 
         dist.all_reduce(batch_loss, op=dist.ReduceOp.AVG)
+        dist.all_reduce(max_loss, op=dist.ReduceOp.MAX)
 
         peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
         peak_memory_pct = peak_memory / max_memory * 100
 
+        pplx = torch.exp(batch_loss).item()
+
         logger.success(
-            f"step {step} | loss {batch_loss.item():.4f} | grad_norm {grad_norm.item():.4f} | peak_memory {peak_memory:.4f} GiB  {peak_memory_pct:.1f}%"
+            f"step {step} | loss {batch_loss.item():.4f} | max_loss {max_loss.item():.4f} | grad_norm {grad_norm.item():.4f} | peak_memory {peak_memory:.4f} GiB  {peak_memory_pct:.1f}% | pplx {pplx:.4f}"
         )
 
         if world.rank == 0 and config.wandb:
             wandb.log(
                 {
-                    "loss/mean": batch_loss.item(),
+                    "train/loss": batch_loss.item(),
+                    "train/max_loss": max_loss.item(),
+                    "train/perplexity": pplx,
                     "optim/grad_norm": grad_norm.item(),
                     "optim/lr": optimizer.param_groups[0]["lr"],
                     "perf/peak_memory": peak_memory,

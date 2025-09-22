@@ -452,6 +452,25 @@ class Transformer(nn.Module):
 
 llama_configs = {
     "debugmodel": TransformerModelArgs(dim=256, n_layers=6, n_heads=16, vocab_size=2000, rope_theta=500000),
+    "14M": TransformerModelArgs(
+        dim=128,
+        n_layers=6,
+        n_heads=4,
+        vocab_size=32000,
+        rope_theta=500000,
+    ),
+    "70M": TransformerModelArgs(
+        dim=512,
+        n_layers=6,
+        n_heads=16,
+        rope_theta=500000,
+    ),
+    "150M": TransformerModelArgs(
+        dim=1024,
+        n_layers=12,
+        n_heads=16,
+        rope_theta=500000,
+    ),
     "8B": TransformerModelArgs(
         dim=4096,
         n_layers=32,

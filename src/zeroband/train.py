@@ -96,7 +96,9 @@ def train(config: Config):
     num_grad_acc = config.data.batch_size // (world.world_size * config.data.micro_batch_size)
 
     tokenizer = (
-        AutoTokenizer.from_pretrained(config.model) if not config.data.fake else FakeTokenizer(model_config.vocab_size)
+        AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b")
+        if not config.data.fake
+        else FakeTokenizer(model_config.vocab_size)
     )
     assert len(tokenizer) == model_config.vocab_size, (
         f"tokenizer vocab size {len(tokenizer)} does not match model vocab size {model_config.vocab_size}"
@@ -122,9 +124,6 @@ def train(config: Config):
             batch = next(data_iter)
             inputs_ids = batch["input_ids"].cuda()
             targets = batch["labels"].cuda()
-
-            logger.info(f"inputs_ids shape: {inputs_ids.shape}")
-            logger.info(f"targets shape: {targets.shape}")
 
             with torch.autocast(device_type="cuda", dtype=torch.float16):
                 outputs = model(inputs_ids)

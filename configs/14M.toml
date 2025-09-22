@@ -1,0 +1,9 @@
+model = "14M"
+total_steps = 1000000
+
+[data]
+name = "allenai/c4"
+micro_batch_size = 8
+batch_size = 64
+seq_len = 2048
+

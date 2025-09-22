@@ -22,3 +22,8 @@ TODO:
 - [ ] add dion low rank support
 - [ ] add diloco with ddp support
 
+TODO slow
+
+- [x] add data
+- [ ] add ckpt
+- [ ] add lr scheduler 

@@ -155,8 +155,8 @@ def train(config: Config):
 
         pplx = torch.exp(batch_loss).item()
 
-        logger.success(
-            f"step {step} | loss {batch_loss.item():.4f} | max_loss {max_loss.item():.4f} | grad_norm {grad_norm.item():.4f} | peak_memory {peak_memory:.4f} GiB  {peak_memory_pct:.1f}% | pplx {pplx:.4f}"
+        logger.info(
+            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [cyan]max_loss {max_loss.item():.4f}[/cyan] | [yellow]pplx {pplx:.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] |"
         )
 
         if world.rank == 0 and config.wandb:

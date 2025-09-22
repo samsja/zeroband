@@ -1,14 +1,17 @@
-import sys
-
 from loguru import logger
+from rich.console import Console
 
-# Remove default handler
+console = Console()
 logger.remove()
 
-# Add with simpler format
-logger.remove()
+
+def print(*args, **kwargs):
+    console.print(*args, **kwargs, end="")
+
+
 logger.add(
-    sys.stderr,
-    format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
+    print,
+    level="TRACE",
+    format="{time:HH:mm:ss} | {level: <8} | {message}",
     colorize=True,
 )

@@ -4,6 +4,9 @@
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
 ```
 
+```bash
+uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml --data.name allenai/c4
+```
 
 ##
 

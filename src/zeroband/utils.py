@@ -1,4 +1,15 @@
+import os
+
+import torch
+
 from zeroband.logger import logger
+
+
+class World:
+    def __init__(self):
+        self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        self.rank = int(os.environ.get("RANK", 0))
+        self.world_size = int(os.environ.get("WORLD_SIZE", 1))
 
 
 # hardcoded BF16 type peak flops for NVIDIA A100, H100, H200, B200 GPU and AMD MI250, MI300X, AMD MI325X and Intel PVC
@@ -45,3 +56,11 @@ def get_peak_flops(device_name: str) -> int:
     else:  # for other GPU types, assume A100
         logger.warning(f"Peak flops undefined for: {device_name}, fallback to A100")
         return 312e12
+
+
+class FakeTokenizer:
+    def __init__(self, vocab_size: int):
+        self.vocab_size = vocab_size
+
+    def __len__(self):
+        return self.vocab_size

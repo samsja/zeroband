@@ -1,64 +1,18 @@
-import os
-
 import torch
 import torch.distributed as dist
 from dion import Muon
-from pydantic_config import BaseConfig, parse_argv
+from pydantic_config import parse_argv
 from rich import print as rprint
 from torch.distributed._composable.replicate import replicate
 from torch.nn import functional as F
+from transformers import AutoTokenizer
 
 import wandb
-
-# from zeroband.utils import get_peak_flops
+from zeroband.config import Config
+from zeroband.data import setup_dataloader
 from zeroband.logger import logger
 from zeroband.model import Transformer, llama_configs
-
-
-class DataConfig(BaseConfig):
-    fake: bool = True
-
-    micro_batch_size: int
-    batch_size: int
-    seq_len: int
-
-
-class OptimizerConfig(BaseConfig):
-    lr: float = 1e-3
-    wd: float = 0.01
-
-
-class CheckpointConfig(BaseConfig):
-    enable: bool = False
-    interval: int = 100
-    keep: int = 5
-    load_step: int | None = None
-
-
-class LRSChedulerConfig(BaseConfig):
-    warmup_steps: int = 100
-    decay_steps: int = 100
-
-
-class WandbConfig(BaseConfig):
-    project: str = "zeroband"
-    name: str | None = None
-    group: str | None = None
-
-
-class Config(BaseConfig):
-    data: DataConfig
-    model: str
-    total_steps: int
-    optim: OptimizerConfig = OptimizerConfig()
-    wandb: WandbConfig | None = None
-
-
-class World:
-    def __init__(self):
-        self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
-        self.rank = int(os.environ.get("RANK", 0))
-        self.world_size = int(os.environ.get("WORLD_SIZE", 1))
+from zeroband.utils import FakeTokenizer, World
 
 
 def train(config: Config):
@@ -141,6 +95,17 @@ def train(config: Config):
     )
     num_grad_acc = config.data.batch_size // (world.world_size * config.data.micro_batch_size)
 
+    tokenizer = (
+        AutoTokenizer.from_pretrained(config.model) if not config.data.fake else FakeTokenizer(model_config.vocab_size)
+    )
+    assert len(tokenizer) == model_config.vocab_size, (
+        f"tokenizer vocab size {len(tokenizer)} does not match model vocab size {model_config.vocab_size}"
+    )
+
+    dataloader = setup_dataloader(config.data, tokenizer)
+
+    data_iter = iter(dataloader)
+
     #####################
     ### training loop ###
     #####################
@@ -154,12 +119,12 @@ def train(config: Config):
         ### gradd accum ##
         ###################
         for _ in range(num_grad_acc):
-            inputs_ids = torch.randint(
-                0, model_config.vocab_size, (config.data.micro_batch_size, config.data.seq_len)
-            ).cuda()
-            targets = torch.randint(
-                0, model_config.vocab_size, (config.data.micro_batch_size, config.data.seq_len)
-            ).cuda()
+            batch = next(data_iter)
+            inputs_ids = batch["input_ids"].cuda()
+            targets = batch["labels"].cuda()
+
+            logger.info(f"inputs_ids shape: {inputs_ids.shape}")
+            logger.info(f"targets shape: {targets.shape}")
 
             with torch.autocast(device_type="cuda", dtype=torch.float16):
                 outputs = model(inputs_ids)

@@ -9,12 +9,15 @@ authors = [
 requires-python = ">=3.10.13"
 dependencies = [
     "torch>=2.8.0",
+    "transformers",
+    "datasets",
     "wandb",
     "numpy",
     "loguru",
     "pydantic_config @ https://github.com/samsja/pydantic_config.git",
     "rich",
     "dion @ git+https://github.com/samsja/dion.git",
+    "torchdata",
 ]
 
 

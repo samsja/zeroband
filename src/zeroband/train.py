@@ -126,7 +126,8 @@ def train(config: Config):
         ###################
         ### gradd accum ##
         ###################
-        for _ in range(num_grad_acc):
+        for grad_acc_step in range(num_grad_acc):
+            model.set_requires_gradient_sync(grad_acc_step == num_grad_acc - 1)
             batch = next(data_iter)
             inputs_ids = batch["input_ids"].cuda()
             targets = batch["labels"].cuda()

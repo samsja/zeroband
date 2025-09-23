@@ -30,8 +30,6 @@ def train(config: Config):
     torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
 
-    # gpu_peak_flops = get_peak_flops(torch.cuda.get_device_name(world.local_rank))
-
     ##################
     ### model init ###
     ##################

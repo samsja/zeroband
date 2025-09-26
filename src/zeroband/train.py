@@ -1,6 +1,5 @@
 import torch
 import torch.distributed as dist
-from dion import Muon
 from pydantic_config import parse_argv
 from rich import print as rprint
 from torch.distributed._composable.replicate import replicate
@@ -12,6 +11,7 @@ from zeroband.config import Config
 from zeroband.data import setup_dataloader
 from zeroband.logger import logger
 from zeroband.model import Transformer, llama_configs
+from zeroband.optim import setup_optimizer
 from zeroband.utils import FakeTokenizer, PerfCounter, World
 
 
@@ -61,31 +61,7 @@ def train(config: Config):
     ### optimizer init ###
     #####################
 
-    # optimizer = AdamW(model.parameters(), lr=config.optim.lr, weight_decay=config.optim.wd)
-    def muon_enabled(n, p):
-        if p.ndim < 2:
-            return False
-        if "lm_head" in n:
-            return False
-        if "embed_tokens" in n:
-            return False
-        return True
-
-    muon_params = [p for n, p in model.named_parameters() if muon_enabled(n, p)]
-    adamw_params = [p for n, p in model.named_parameters() if not muon_enabled(n, p)]
-
-    optimizer = Muon(
-        params=[
-            dict(
-                params=muon_params,
-                algorithm="muon",
-                lr=config.optim.lr,
-                weight_decay=config.optim.wd,
-                adjust_lr="rms_norm",
-            ),
-            dict(params=adamw_params, algorithm="adamw", lr=config.optim.lr, weight_decay=config.optim.wd),
-        ]
-    )
+    optimizer = setup_optimizer(model, config.optim)
 
     ##################
     ### data init ###

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_config import BaseConfig
 
 
@@ -15,6 +17,8 @@ class DataConfig(BaseConfig):
 
 
 class OptimizerConfig(BaseConfig):
+    type: Literal["adamw", "muon"] = "muon"
+
     lr: float = 1e-3
     wd: float = 0.01
 

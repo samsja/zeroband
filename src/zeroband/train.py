@@ -29,6 +29,7 @@ def train(config: Config):
 
     torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
+    torch._dynamo.config.compiled_autograd = True
 
     ##################
     ### model init ###

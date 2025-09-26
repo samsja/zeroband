@@ -10,3 +10,7 @@ micro_batch_size = 16
 batch_size = 256
 seq_len = 2048
 
+[lr_scheduler]
+type = "linear"
+warmup_steps = 20
+decay_steps = 0

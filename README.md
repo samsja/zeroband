@@ -8,6 +8,10 @@ uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py 
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml --data.name allenai/c4
 ```
 
+```bash
+uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/14M.toml
+```
+
 ##
 
 codebase to create low bandwith scaling law.

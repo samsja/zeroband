@@ -10,6 +10,7 @@ import wandb
 from zeroband.config import Config
 from zeroband.data import setup_dataloader
 from zeroband.logger import logger
+from zeroband.lr_scheduler import setup_scheduler
 from zeroband.model import Transformer, llama_configs
 from zeroband.optim import setup_optimizer
 from zeroband.utils import FakeTokenizer, PerfCounter, World
@@ -62,6 +63,7 @@ def train(config: Config):
     #####################
 
     optimizer = setup_optimizer(model, config.optim)
+    scheduler = setup_scheduler(optimizer, config.scheduler, config.total_steps, config.optim.lr)
 
     ##################
     ### data init ###
@@ -122,6 +124,7 @@ def train(config: Config):
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         optimizer.step()
+        scheduler.step()
         optimizer.zero_grad()
 
         ####################
@@ -142,7 +145,7 @@ def train(config: Config):
         )
 
         logger.info(
-            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] | [cyan]tps {perf_data['tps']:.4f}[/cyan] | [yellow]mfu {perf_data['mfu']:.4f}%[/yellow]"
+            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] | [cyan]tps {perf_data['tps']:.4f}[/cyan] | [yellow]mfu {perf_data['mfu']:.4f}%[/yellow], [purple]lr {optimizer.param_groups[0]['lr']:.4f}[/purple]"
         )
 
         if world.rank == 0 and config.wandb:

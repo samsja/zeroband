@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_config import BaseConfig
 
 
@@ -46,9 +47,24 @@ class ModelConfig(BaseConfig):
     compile: bool = True
 
 
+class LRSchedulerConfig(BaseConfig):
+    """Configuration for linear learning rate scheduler."""
+
+    type: Literal["linear", "cosine"] = "linear"
+    warmup_steps: int = 10
+    decay_steps: int = 0
+
+    @model_validator(mode="after")
+    def no_decay_with_cosine(self):
+        if self.type == "cosine" and not self.decay_steps == 0:
+            raise ValueError("Cosine scheduler should not have decay steps")
+        return self
+
+
 class Config(BaseConfig):
     data: DataConfig
     model: ModelConfig
     total_steps: int
     optim: OptimizerConfig = OptimizerConfig()
+    scheduler: LRSchedulerConfig = LRSchedulerConfig()
     wandb: WandbConfig | None = None

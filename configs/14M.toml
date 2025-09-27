@@ -9,6 +9,7 @@ name = "allenai/c4"
 micro_batch_size = 16
 batch_size = 256
 seq_len = 2048
+num_workers = 8
 
 [scheduler]
 type = "linear"

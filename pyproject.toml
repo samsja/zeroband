@@ -15,6 +15,7 @@ dependencies = [
     "numpy",
     "loguru",
     "pydantic_config @ https://github.com/samsja/pydantic_config.git",
+    "tomli",
     "rich",
     "dion @ git+https://github.com/samsja/dion.git",
     "torchdata",

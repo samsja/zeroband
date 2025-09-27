@@ -1,7 +1,5 @@
 name: 14M-bs-256-steps-22k
 project: zeroband
-
-project: 150M-diloco-v2
 command:
   - ${env}                # wandb injects env vars/API key
   - ./sweeps/run.sh 

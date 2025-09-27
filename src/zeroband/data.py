@@ -37,12 +37,12 @@ class HfDataset(IterableDataset):
                 yield {"input_ids": batch_to_yield[:-1], "labels": batch_to_yield[1:]}
 
     def load_state_dict(self, state_dict):
-        assert state_dict.keys() == ["token_buffer", "data"]
-        self._current_batch = state_dict["token_buffer"]
+        assert state_dict.keys() == ["_current_batch", "data"]
+        self._current_batch = state_dict["_current_batch"]
         self._data.load_state_dict(state_dict["data"])
 
     def state_dict(self):
-        return {"token_buffer": self._token_buffer, "data": self._data.state_dict()}
+        return {"_current_batch": self._current_batch, "data": self._data.state_dict()}
 
 
 class FakeDataset(IterableDataset):

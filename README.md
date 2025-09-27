@@ -1,5 +1,13 @@
 # zeroband
 
+## install
+
+```bash
+curl -sSL https://raw.githubusercontent.com/samsja/zeroband/main/install.sh | bash
+```
+
+## run
+
 ```bash
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
 ```
@@ -21,7 +29,7 @@ TODO:
 
 - [x] add llama
 - [ ] add mup to llama
-- [ ] add full graph compile ddp
+- [x] add full graph compile ddp
 - [ ] add low precision all reduce support
 - [ ] add dion low rank support
 - [ ] add diloco with ddp support
@@ -29,5 +37,4 @@ TODO:
 TODO slow
 
 - [x] add data
-- [ ] add ckpt
-- [ ] add lr scheduler 
+- [x] add lr scheduler 

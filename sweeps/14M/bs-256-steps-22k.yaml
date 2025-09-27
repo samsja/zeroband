@@ -1,15 +1,16 @@
-name: 14M-bs-256-steps-2k
-project: zeroband_debug_sweep
+name: 14M-bs-256-steps-22k
+project: zeroband
 
 project: 150M-diloco-v2
 command:
   - ${env}                # wandb injects env vars/API key
   - ./sweeps/run.sh 
   - "@configs/14M.toml"
-  - --total_steps=2200 
+  - --total_steps=22_000 
   - --data.batch_size=256 
-  - --scheduler.warmup_steps=250 
-  - --scheduler.decay_steps=200 
+  - --data.micro_batch_size=64
+  - --scheduler.warmup_steps=2000 
+  - --scheduler.decay_steps=2000 
   - ${args}
 
 method: bayes             

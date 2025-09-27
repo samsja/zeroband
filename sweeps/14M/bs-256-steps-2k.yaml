@@ -1,0 +1,24 @@
+name: 14M-bs-256-steps-22k
+project: zeroband
+command:
+  - ${env}                # wandb injects env vars/API key
+  - ./sweeps/run.sh 
+  - "@configs/14M.toml"
+  - --total_steps=22_000 
+  - --data.batch_size=256 
+  - --data.micro_batch_size=64
+  - --scheduler.warmup_steps=2000 
+  - --scheduler.decay_steps=2000 
+  - ${args}
+
+method: bayes             
+
+parameters:
+  optim.lr:
+    distribution: log_uniform_values
+    min: 0.00001  # 1e-5
+    max: 0.1      # 1e-1
+
+metric:                   # which curve the scheduler watches
+  name: train/loss
+  goal: minimize

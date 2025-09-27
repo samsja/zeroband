@@ -6,7 +6,7 @@ from pydantic_config import BaseConfig
 
 class DataConfig(BaseConfig):
     name: str = "allenai/c4"
-    fake: bool = True
+    fake: bool = False
 
     micro_batch_size: int
     batch_size: int

@@ -6,6 +6,7 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 from transformers import PreTrainedTokenizer
 
 from zeroband.config import DataConfig
+from zeroband.logger import logger
 from zeroband.utils import World
 
 
@@ -17,22 +18,23 @@ class HfDataset(IterableDataset):
 
         world = World()
 
-        ds = load_dataset(dataset_name, split="train", streaming=True)
-        self._data = split_dataset_by_node(ds, world.world_size, world.rank)
+        logger.info(f"world size: {world.world_size}, rank: {world.rank}")
+
+        ds = load_dataset(dataset_name, name="en", split="train", streaming=True)
+        self._data = split_dataset_by_node(ds, world.rank, world.world_size)
 
         self._current_batch = []
 
     def __iter__(self):
-        while True:
-            sample = self._data.next()["text"]
-            sample = self.tokenizer.encode(sample, add_special_tokens=False, add_bos=True, add_eos=True)[
-                : self.target_seq_len
-            ]
+        for sample in self._data:
+            sample = sample["text"]
+            sample = self.tokenizer.encode(sample, add_special_tokens=True)[: self.target_seq_len]
 
-            self._current_batch.append(sample)
+            self._current_batch.extend(sample)
 
             if len(self._current_batch) >= self.target_seq_len:  # always need +1 on seq len for labels
-                batch_to_yield = torch.tensor(self._current_batch[: self.target_seq_len])
+                current_batch = self._current_batch[: self.target_seq_len]
+                batch_to_yield = torch.tensor(current_batch)
                 self._current_batch = []
                 yield {"input_ids": batch_to_yield[:-1], "labels": batch_to_yield[1:]}
 

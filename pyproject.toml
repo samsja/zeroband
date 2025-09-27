@@ -18,6 +18,7 @@ dependencies = [
     "rich",
     "dion @ git+https://github.com/samsja/dion.git",
     "torchdata",
+    "sentencepiece",
 ]
 
 

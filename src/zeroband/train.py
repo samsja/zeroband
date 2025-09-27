@@ -52,9 +52,8 @@ def train(config: Config):
     #########################
 
     if world.rank == 0 and config.wandb:
-        wandb.init(
-            project=config.wandb.project, name=config.wandb.name, group=config.wandb.group, config=config.model_dump()
-        )
+        name, group = config.wandb_name_and_group()
+        wandb.init(project=config.wandb.project, name=name, group=group, config=config.model_dump())
 
     max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB
 

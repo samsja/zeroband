@@ -38,8 +38,6 @@ class LRSChedulerConfig(BaseConfig):
 
 class WandbConfig(BaseConfig):
     project: str = "zeroband"
-    name: str | None = None
-    group: str | None = None
 
 
 class ModelConfig(BaseConfig):
@@ -68,3 +66,8 @@ class Config(BaseConfig):
     optim: OptimizerConfig = OptimizerConfig()
     scheduler: LRSchedulerConfig = LRSchedulerConfig()
     wandb: WandbConfig | None = None
+
+    def wandb_name_and_group(self) -> str:
+        name = f"lr-{self.optim.lr}"
+        group = f"{self.model.name}-{self.optim.type}-lr-{self.optim.lr}-bs-{self.data.batch_size}-total_steps-{self.total_steps}"
+        return name, group

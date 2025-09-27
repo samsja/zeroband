@@ -13,7 +13,7 @@ class HfDataset(IterableDataset):
     def __init__(self, dataset_name: str, tokenizer: PreTrainedTokenizer, seq_len: int):
         self.dataset_name = dataset_name
         self.tokenizer = tokenizer
-        self.seq_len = seq_len
+        self.target_seq_len = seq_len + 1
 
         world = World()
 
@@ -25,12 +25,14 @@ class HfDataset(IterableDataset):
     def __iter__(self):
         while True:
             sample = self._data.next()["text"]
-            sample = self.tokenizer.encode(sample, add_special_tokens=False, add_bos=True, add_eos=True)[: self.seq_len]
+            sample = self.tokenizer.encode(sample, add_special_tokens=False, add_bos=True, add_eos=True)[
+                : self.target_seq_len
+            ]
 
             self._current_batch.append(sample)
 
-            if len(self._current_batch) > self.seq_len:  # always need +1 on seq len for labels
-                batch_to_yield = torch.tensor(self._current_batch[: self.seq_len])
+            if len(self._current_batch) >= self.target_seq_len:  # always need +1 on seq len for labels
+                batch_to_yield = torch.tensor(self._current_batch[: self.target_seq_len])
                 self._current_batch = []
                 yield {"input_ids": batch_to_yield[:-1], "labels": batch_to_yield[1:]}
 

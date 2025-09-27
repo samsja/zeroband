@@ -73,7 +73,7 @@ def train(config: Config):
     num_grad_acc = config.data.batch_size // (world.world_size * config.data.micro_batch_size)
 
     tokenizer = (
-        AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1", legacy=False)
+        AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b", legacy=False)
         if not config.data.fake
         else FakeTokenizer(model_config.vocab_size)
     )

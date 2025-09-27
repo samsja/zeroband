@@ -1,13 +1,16 @@
-project: zeroband
+name: 14M-bs-256-steps-2k
+project: zeroband_debug_sweep
+
+project: 150M-diloco-v2
 command:
   - ${env}                # wandb injects env vars/API key
-  - uv run torchrun --local-ranks-filter 0 --nproc_per_node=1 src/zeroband/train.py @ configs/14M.toml
-  - --total_steps=2200
-  - --data.batch_size=256
-  - --lr.scheduler.warmup_steps=250
-  - --lr.scheduler.decay_steps=200
+  - ./sweeps/run.sh 
+  - "@configs/14M.toml"
+  - --total_steps=2200 
+  - --data.batch_size=256 
+  - --scheduler.warmup_steps=250 
+  - --scheduler.decay_steps=200 
   - ${args}
-
 
 method: bayes             
 

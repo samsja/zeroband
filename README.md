@@ -20,6 +20,13 @@ uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py 
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/14M.toml
 ```
 
+## sweeps
+
+```bash
+wandb sweep sweeps/14M/bs-256-steps-2k.yaml
+```
+
+
 ##
 
 codebase to create low bandwith scaling law.

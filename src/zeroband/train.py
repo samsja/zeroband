@@ -14,6 +14,7 @@ from zeroband.lr_scheduler import setup_scheduler
 from zeroband.model import Transformer, llama_configs
 from zeroband.optim import setup_optimizer
 from zeroband.utils import FakeTokenizer, PerfCounter, World
+from zeroband.semi_sync import apply_semi_sync_opt
 
 
 def train(config: Config):
@@ -75,7 +76,10 @@ def train(config: Config):
 
     optimizer = setup_optimizer(model, config.optim)
     scheduler = setup_scheduler(optimizer, config.scheduler, config.total_steps, config.optim.lr)
-
+    
+    if config.semi_sync is not None:
+        apply_semi_sync_opt(optimizer)
+ 
     ##################
     ### data init ###
     ##################

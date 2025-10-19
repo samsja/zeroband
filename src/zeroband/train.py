@@ -35,8 +35,6 @@ def train(config: Config):
         device = torch.device("cpu")
         dist.init_process_group(backend="cpu:gloo")
 
-        
-
     torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
     torch._dynamo.config.compiled_autograd = True
@@ -64,9 +62,8 @@ def train(config: Config):
         name, group = config.wandb_name_and_group()
         wandb.init(project=config.wandb.project, name=name, group=group, config=config.model_dump())
 
-
     if not config.cpu:
-        max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB 
+        max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB
     else:
         max_memory = 1
 
@@ -76,10 +73,10 @@ def train(config: Config):
 
     optimizer = setup_optimizer(model, config.optim)
     scheduler = setup_scheduler(optimizer, config.scheduler, config.total_steps, config.optim.lr)
-    
+
     if config.semi_sync is not None:
         apply_semi_sync_opt(optimizer, config.semi_sync)
- 
+
     ##################
     ### data init ###
     ##################
@@ -110,7 +107,6 @@ def train(config: Config):
     total_tokens = 0
 
     for step in range(config.total_steps):
-        
         if not config.cpu:
             torch.cuda.reset_peak_memory_stats()
 
@@ -155,7 +151,7 @@ def train(config: Config):
             peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
         else:
             peak_memory = 1
-            
+
         peak_memory_pct = peak_memory / max_memory * 100
 
         pplx = torch.exp(batch_loss).item()

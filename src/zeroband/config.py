@@ -57,19 +57,21 @@ class LRSchedulerConfig(BaseConfig):
         if self.type == "cosine" and not self.decay_steps == 0:
             raise ValueError("Cosine scheduler should not have decay steps")
         return self
-    
+
 
 class LocalSGDConfig(BaseConfig):
     type: Literal["local_sgd"] = "local_sgd"
     inner_steps: int = 10
 
+
 class DilocoConfig(BaseConfig):
     type: Literal["diloco"] = "diloco"
     inner_steps: int = 10
     outer_lr: float = 0.7
-    nesterov: bool = True  
+    nesterov: bool = True
 
-SemiSyncType: TypeAlias = Union[LocalSGDConfig, DilocoConfig]     
+
+SemiSyncType: TypeAlias = Union[LocalSGDConfig, DilocoConfig]
 
 
 class Config(BaseConfig):
@@ -79,11 +81,10 @@ class Config(BaseConfig):
     optim: OptimizerConfig = OptimizerConfig()
     scheduler: LRSchedulerConfig = LRSchedulerConfig()
     wandb: WandbConfig | None = None
-    cpu: bool = False # use for dev in plane 
-    
+    cpu: bool = False  # use for dev in plane
+
     semi_sync: LocalSGDConfig | None = None
-    
-    
+
     def wandb_name_and_group(self) -> str:
         name = f"lr-{self.optim.lr}"
         group = f"{self.model.name}-{self.optim.type}-lr-{self.optim.lr}-bs-{self.data.batch_size}-total_steps-{self.total_steps}"

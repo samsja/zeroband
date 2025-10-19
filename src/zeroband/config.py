@@ -1,6 +1,6 @@
 from typing import Literal, Union, TypeAlias
 
-from pydantic import model_validator
+from pydantic import model_validator, Field
 from pydantic_config import BaseConfig
 
 
@@ -68,7 +68,6 @@ class DilocoConfig(BaseConfig):
     type: Literal["diloco"] = "diloco"
     inner_steps: int = 10
     outer_lr: float = 0.7
-    nesterov: bool = True
 
 
 SemiSyncType: TypeAlias = Union[LocalSGDConfig, DilocoConfig]
@@ -83,7 +82,7 @@ class Config(BaseConfig):
     wandb: WandbConfig | None = None
     cpu: bool = False  # use for dev in plane
 
-    semi_sync: LocalSGDConfig | None = None
+    semi_sync: SemiSyncType | None = None
 
     def wandb_name_and_group(self) -> str:
         name = f"lr-{self.optim.lr}"

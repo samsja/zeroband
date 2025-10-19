@@ -12,6 +12,13 @@ curl -sSL https://raw.githubusercontent.com/samsja/zeroband/main/install.sh | ba
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml
 ```
 
+
+local sgd
+
+```bash
+uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml --semi_sync.type local_sgd
+```
+
 ```bash
 uv run torchrun --local-ranks-filter 0 --nproc_per_node=2 src/zeroband/train.py @ configs/debug.toml --data.name allenai/c4
 ```

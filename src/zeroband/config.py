@@ -63,13 +63,13 @@ class LocalSGDConfig(BaseConfig):
     type: Literal["local_sgd"] = "local_sgd"
     inner_step: int = 10
 
-class Diloco(BaseConfig):
+class DilocoConfig(BaseConfig):
     type: Literal["diloco"] = "diloco"
     inner_step: int = 10
     outer_lr: float = 0.7
     nesterov: bool = True  
 
-SemiSyncType: TypeAlias = Union[LocalSGDConfig, Diloco]     
+SemiSyncType: TypeAlias = Union[LocalSGDConfig, DilocoConfig]     
 
 
 class Config(BaseConfig):

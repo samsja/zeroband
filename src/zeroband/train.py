@@ -78,7 +78,7 @@ def train(config: Config):
     scheduler = setup_scheduler(optimizer, config.scheduler, config.total_steps, config.optim.lr)
     
     if config.semi_sync is not None:
-        apply_semi_sync_opt(optimizer)
+        apply_semi_sync_opt(optimizer, config.semi_sync)
  
     ##################
     ### data init ###

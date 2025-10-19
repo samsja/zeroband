@@ -51,10 +51,13 @@ def train(config: Config):
         model = torch.compile(model, fullgraph=True)
         logger.info("Model compiled")
 
-    model = replicate(model, bucket_cap_mb=100)  # TODO make sure we don't all reduce at each grad acc step
-    logger.info("Applied DDP to model")
+    if config.semi_sync is None:
+        model = replicate(model, bucket_cap_mb=100)
+        logger.info("Applied DDP to model")
+    else:
+        logger.info(f"using semi sync {config.semi_sync.type}, skipping DDP")
 
-    #########################
+    #########################no
     ### other init ###
     #########################
 
@@ -76,6 +79,7 @@ def train(config: Config):
 
     if config.semi_sync is not None:
         apply_semi_sync_opt(optimizer, config.semi_sync)
+        logger.info("Applied semi sync hook")
 
     ##################
     ### data init ###
@@ -117,7 +121,9 @@ def train(config: Config):
         ### gradd accum ##
         ###################
         for grad_acc_step in range(num_grad_acc):
-            model.set_requires_gradient_sync(grad_acc_step == num_grad_acc - 1)
+            if config.semi_sync is None:
+                model.set_requires_gradient_sync(grad_acc_step == num_grad_acc - 1)
+
             batch = next(data_iter)
             inputs_ids = batch["input_ids"].to(device)
             targets = batch["labels"].to(device)

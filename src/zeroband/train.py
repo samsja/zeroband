@@ -162,7 +162,7 @@ def train(config: Config):
         )
 
         logger.info(
-            f"[green]step {step}[/green] | [yellow]loss{batch_loss.item():.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] | [cyan]tps {perf_data['tps']:.4f}[/cyan] | [yellow]mfu {perf_data['mfu']:.4f}%[/yellow], [purple]lr {optimizer.param_groups[0]['lr']:.4f}[/purple]"
+            f"[green]step {step}[/green] | [yellow]loss {batch_loss.item():.4f}[/yellow] | [red]grad_norm {grad_norm.item():.4f}[/red] | [blue]peak_memory {peak_memory:.4f} GiB {peak_memory_pct:.1f}%[/blue] | [cyan]tps {perf_data['tps']:.4f}[/cyan] | [yellow]mfu {perf_data['mfu']:.4f}%[/yellow], [purple]lr {optimizer.param_groups[0]['lr']:.4f}[/purple]"
         )
 
         if world.rank == 0 and config.wandb:

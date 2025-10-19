@@ -61,11 +61,11 @@ class LRSchedulerConfig(BaseConfig):
 
 class LocalSGDConfig(BaseConfig):
     type: Literal["local_sgd"] = "local_sgd"
-    inner_step: int = 10
+    inner_steps: int = 10
 
 class DilocoConfig(BaseConfig):
     type: Literal["diloco"] = "diloco"
-    inner_step: int = 10
+    inner_steps: int = 10
     outer_lr: float = 0.7
     nesterov: bool = True  
 

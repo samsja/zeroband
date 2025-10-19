@@ -64,7 +64,12 @@ class PerfCounter:
     def __init__(self, model: Transformer, seq_len: int):
         self.model_config = model.model_args
         self.world = World()
-        self.peak_flops = get_peak_flops(torch.cuda.get_device_name(self.world.local_rank))
+        try:
+            device_name = torch.cuda.get_device_name(self.world.local_rank)
+        except RuntimeError:
+            device_name = "cpu"
+            
+        self.peak_flops = get_peak_flops(device_name)
         self.nparams, self.num_flops_per_token = self.model_config.get_nparams_and_flops(model, seq_len=seq_len)
 
         self._start_time = None

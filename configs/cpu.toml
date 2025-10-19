@@ -1,5 +1,4 @@
 total_steps = 5
-cpu = true
 
 [model]
 name = "debugmodel"

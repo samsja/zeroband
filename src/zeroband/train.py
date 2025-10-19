@@ -25,8 +25,16 @@ def train(config: Config):
 
     logger.info(f"Starting training on device: {world.local_rank} with world size: {world.world_size}")
 
-    torch.cuda.set_device(world.local_rank)
-    dist.init_process_group(backend="cuda:nccl", device_id=torch.device("cuda", world.local_rank))
+    if not config.cpu:
+        torch.cuda.set_device(world.local_rank)
+        device = torch.device("cuda", world.local_rank)
+        dist.init_process_group(backend="cuda:nccl", device_id=device)
+
+    else:
+        device = torch.device("cpu")
+        dist.init_process_group(backend="cpu:gloo")
+
+        
 
     torch.set_float32_matmul_precision("high")
     torch._dynamo.config.optimize_ddp = "python_reducer_without_compiled_forward"
@@ -37,7 +45,7 @@ def train(config: Config):
     ##################
 
     model_config = llama_configs[config.model.name]
-    model = Transformer(model_config).cuda()
+    model = Transformer(model_config).to(device)
     logger.info("Model initialized")
 
     if config.model.compile:
@@ -55,7 +63,11 @@ def train(config: Config):
         name, group = config.wandb_name_and_group()
         wandb.init(project=config.wandb.project, name=name, group=group, config=config.model_dump())
 
-    max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB
+
+    if not config.cpu:
+        max_memory = torch.cuda.mem_get_info()[1] / 1024**3  # GiB 
+    else:
+        max_memory = 1
 
     ######################
     ### optimizer init ###
@@ -94,10 +106,12 @@ def train(config: Config):
     total_tokens = 0
 
     for step in range(config.total_steps):
-        torch.cuda.reset_peak_memory_stats()
+        
+        if not config.cpu:
+            torch.cuda.reset_peak_memory_stats()
 
-        batch_loss = torch.tensor(0.0).cuda()
-        max_loss = torch.tensor(0.0).cuda()
+        batch_loss = torch.tensor(0.0).to(device)
+        max_loss = torch.tensor(0.0).to(device)
         perf_counter.start()
         ###################
         ### gradd accum ##
@@ -105,8 +119,8 @@ def train(config: Config):
         for grad_acc_step in range(num_grad_acc):
             model.set_requires_gradient_sync(grad_acc_step == num_grad_acc - 1)
             batch = next(data_iter)
-            inputs_ids = batch["input_ids"].cuda()
-            targets = batch["labels"].cuda()
+            inputs_ids = batch["input_ids"].to(device)
+            targets = batch["labels"].to(device)
 
             with torch.autocast(device_type="cuda", dtype=torch.float16):
                 outputs = model(inputs_ids)
@@ -133,7 +147,11 @@ def train(config: Config):
         dist.all_reduce(batch_loss, op=dist.ReduceOp.AVG)
         dist.all_reduce(max_loss, op=dist.ReduceOp.MAX)
 
-        peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
+        if not config.cpu:
+            peak_memory = torch.cuda.max_memory_allocated() / 1024 / 1024 / 1024
+        else:
+            peak_memory = 1
+            
         peak_memory_pct = peak_memory / max_memory * 100
 
         pplx = torch.exp(batch_loss).item()

@@ -66,6 +66,7 @@ class Config(BaseConfig):
     optim: OptimizerConfig = OptimizerConfig()
     scheduler: LRSchedulerConfig = LRSchedulerConfig()
     wandb: WandbConfig | None = None
+    cpu: bool = False # use for dev in plane
 
     def wandb_name_and_group(self) -> str:
         name = f"lr-{self.optim.lr}"
